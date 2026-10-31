@@ -1,4 +1,4 @@
-# AI Competitor Analyzer 🤖
+# AI Competitor Analyzer 
 
 A zero-friction, client-side tool designed to extract and align multilingual e-commerce specification sheets with one click. Say goodbye to manual copy-pasting.
 
