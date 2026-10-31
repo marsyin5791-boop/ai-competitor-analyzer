@@ -1,0 +1,721 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI 競品分析器｜一鍵提取規格</title>
+<style>
+    :root {
+        --bg: #EDF0F2; --sheet: #FFFFFF; --ink: #14212B; --sub: #566772; 
+        --dim: #0A7286; --dim-hover: #085A6A; --border: #C8D1D7; --danger: #B42B2B;
+        --grid: #E4E9EC; --field: #FFFFFF;
+    }
+    @media (prefers-color-scheme: dark) {
+        :root {
+            --bg: #0E151B; --sheet: #151E26; --ink: #E6ECF0; --sub: #93A3AF;
+            --dim: #4FC3D9; --dim-hover: #3DAABF; --border: #2B3843; --danger: #F27D77;
+            --grid: #1B2630; --field: #101820;
+        }
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans TC", sans-serif; font-variant-numeric: tabular-nums; }
+    .wrap { max-width: 1100px; margin: 0 auto; padding: 40px 20px 60px; }
+    
+    .langbar { display: flex; justify-content: flex-end; margin-bottom: 10px; }
+    #langBtn { font: 500 13px/1 inherit; padding: 6px 12px; border-radius: 99px; border: 1px solid var(--border); background: var(--sheet); color: var(--dim); cursor: pointer; transition: all 0.2s; }
+    #langBtn:hover { border-color: var(--dim); }
+
+    header { text-align: center; margin-bottom: 30px; }
+    h1 { margin: 0 0 10px; font-size: 32px; letter-spacing: 1px; color: var(--dim); font-weight: 600; }
+    .lede { color: var(--sub); font-size: 15px; max-width: 600px; margin: 0 auto; }
+    
+    .card { background: var(--sheet); border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); padding: 24px; margin-bottom: 24px; border: 1px solid var(--border); }
+    
+    .input-group { margin-bottom: 16px; }
+    .input-group label { display: block; font-size: 14px; color: var(--sub); margin-bottom: 6px; font-weight: 600; }
+    
+    input[type="text"], input[type="password"], textarea, select { width: 100%; padding: 12px 16px; border: 1px solid var(--border); border-radius: 6px; font: inherit; font-size: 14px; background: var(--field); color: var(--ink); transition: border 0.2s; }
+    input[type="text"]:focus, input[type="password"]:focus, textarea:focus, select:focus { outline: 2px solid var(--dim); outline-offset: 1px; border-color: transparent; }
+    textarea { height: 140px; resize: vertical; }
+    
+    .settings { display: flex; gap: 16px; margin-top: 16px; flex-wrap: wrap; align-items: center; }
+    .settings input { flex: 1; min-width: 200px; }
+    .chk-label { display: flex; align-items: center; gap: 6px; font-size: 14px; color: var(--sub); cursor: pointer; }
+    .chk-label input { width: 16px; height: 16px; accent-color: var(--dim); cursor: pointer; }
+    
+    .actions { margin-top: 24px; display: flex; justify-content: space-between; align-items: center; }
+    button { background: var(--dim); color: white; border: 1px solid var(--dim); padding: 11px 24px; font-size: 16px; font-weight: 500; border-radius: 6px; cursor: pointer; transition: background 0.2s; }
+    button:hover { background: var(--dim-hover); }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-clear { background: transparent; color: var(--danger); border: 1px solid var(--danger); padding: 10px 20px; }
+    .btn-clear:hover { background: rgba(180, 43, 43, 0.1); }
+    
+    #status { margin-top: 16px; color: var(--dim); font-weight: 500; text-align: center; display: none; }
+    
+    .result-card { display: none; }
+    .result-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 16px; margin-bottom: 16px; }
+    .result-header h2 { margin: 0; font-size: 20px; }
+    
+    .compare-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    .compare-table th, .compare-table td { border: 1px solid var(--border); padding: 12px 16px; text-align: left; vertical-align: top; }
+    .compare-table th { background: var(--grid); font-weight: 600; color: var(--sub); white-space: nowrap; position: relative; }
+    .compare-table th:first-child { background: var(--border); color: var(--ink); width: 150px; }
+    .compare-table tr:nth-child(even) { background: rgba(0,0,0,0.02); }
+    @media (prefers-color-scheme: dark) { .compare-table tr:nth-child(even) { background: rgba(255,255,255,0.02); } }
+    .compare-table a { color: var(--dim); text-decoration: none; }
+    .compare-table a:hover { text-decoration: underline; }
+    
+    .btn-del {
+        position: absolute; top: 4px; right: 4px;
+        background: transparent; color: var(--sub); border: none;
+        width: 24px; height: 24px; font-size: 18px; line-height: 1;
+        border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center;
+        padding: 0;
+    }
+    .btn-del:hover { background: var(--danger); color: white; }
+
+    .loader { display: inline-block; width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.3); border-radius: 50%; border-top-color: #fff; animation: spin 1s ease-in-out infinite; margin-right: 8px; vertical-align: middle; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .foot { margin-top: 34px; padding-top: 24px; border-top: 1px solid var(--border); text-align: center; font-size: 14px; color: var(--sub); }
+    .foot a { color: var(--dim); font-weight: 600; text-decoration: none; border-bottom: 1px solid var(--dim); }
+    .foot a:hover { opacity: 0.8; }
+    .foot p { margin: 6px 0; }
+    .foot .s { font-size: 13px; color: var(--sub); opacity: 0.8; margin-top: 16px; }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+    <div class="langbar">
+        <button id="langBtn" type="button">English</button>
+    </div>
+
+    <header>
+        <h1 id="t-title">🤖 AI 競品分析器</h1>
+        <p class="lede" id="t-lede">輸入網址並貼上網頁文字 ➜ 提取 ➜ 再貼下一個。<br>自動判斷產品類別，精準抓取專屬規格！</p>
+    </header>
+
+    <div class="card">
+        <div class="input-group">
+            <label id="t-lbl-url">1. 產品網址（選填，會自動生成來源與連結）</label>
+            <input type="text" id="sourceUrl" placeholder="https://item.jd.com/... 或 https://www.amazon.com/...">
+        </div>
+
+        <div class="input-group">
+            <label id="t-lbl-text">2. 網頁內容（必填，請在網頁按 Ctrl+A 全選、Ctrl+C 複製後貼上）</label>
+            <textarea id="sourceText" placeholder="把剛剛複製的網頁內容貼在這裡..."></textarea>
+        </div>
+        
+        <div class="settings">
+            <input type="password" id="apiKey" placeholder="請輸入 Gemini API Key（可用半形逗號 , 隔開多組）">
+            <label class="chk-label">
+                <input type="checkbox" id="saveKey"> <span id="t-lbl-save">記住 Key（存在本機）</span>
+            </label>
+            <button style="background: transparent; color: var(--dim); border: 1px solid var(--dim); padding: 0 16px; height: 42px;" onclick="window.open('https://aistudio.google.com/app/apikey', '_blank')" id="t-btn-key">取得免費 Key</button>
+        </div>
+        <p class="lede" id="t-api-hint" style="text-align:left; font-size:13px; margin-top:8px; color:var(--sub);">💡 支援多個 API Key，使用半形逗號 ( , ) 隔開，額度用完會自動切換。</p>
+        
+        <div class="actions">
+            <button id="runBtn" onclick="extractAndAdd()"><span id="t-btn-run">🚀 提取並加入比較</span></button>
+            <button class="btn-clear" onclick="clearAll()" id="t-btn-clear">🗑️ 清空比較表</button>
+        </div>
+        <div id="status"></div>
+    </div>
+
+    <div class="card result-card" id="resultCard">
+        <div class="result-header">
+            <h2><span id="t-res-title">📊 競品比較結果</span> <span id="productCount" style="font-size:14px; color:var(--sub); font-weight:normal;"></span></h2>
+            <button style="padding: 6px 16px; font-size: 14px; background: var(--dim);" onclick="exportExcel()" id="t-btn-export">📥 匯出 Excel (CSV)</button>
+        </div>
+        <div style="overflow-x: auto;">
+            <table class="compare-table" id="compareTable">
+                <thead></thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+
+    <footer class="foot">
+        <p><a href="https://yinonmars.com/" target="_blank" rel="noopener">YinOnMars｜產品火星人</a></p>
+        <p id="t-foot-bio">我是瑪司．隱。產品開發、AI 融合與開源LLM研究</p>
+        <p><span id="t-foot-fb1">發現問題，或有可以提供的實測數據？到</span> <a href="https://yinonmars.com/" target="_blank" rel="noopener">YinOnMars</a> <span id="t-foot-fb2">告訴我。</span></p>
+        <p class="s" id="t-foot-meta">⚠️ 注意：API Key 僅儲存在您的瀏覽器本機，不會上傳。貼上的網頁內容會傳送至 Google Gemini 進行分析，請勿貼上機密資料。</p>
+    </footer>
+</div>
+
+<script>
+    let products = [];
+    let lang = 'zh'; 
+    let currentApiKeyIndex = 0; // 支援多組 Key
+
+    // 基礎通用欄位（所有產品都有的）
+    const CORE_FIELDS = ['品牌', '型號', '價格', '顏色', '重量', '銷售平台', '產品狀況', '累計評價數', '保固'];
+
+    // ══════════════════════════════════════════════════════
+    // 欄位名稱標準化：避免「差一個字」就開新欄位
+    // ══════════════════════════════════════════════════════
+
+    const SYNONYMS = {
+        // 功率
+        '瓦數': '額定功率', '功率': '額定功率', '輸出功率': '額定功率',
+        '總功率': '額定功率', 'ratedpower': '額定功率', 'wattage': '額定功率',
+        // 效率
+        '80plus': '效率認證', '80plus認證': '效率認證', '轉換效率': '效率認證',
+        '效率': '效率認證', 'efficiency': '效率認證', 'efficiencyrating': '效率認證',
+        // ATX / PCIe
+        'atx': 'ATX版本', 'pcie': 'PCIe版本', 'pcie接口': 'PCIe版本', 'pcie供電': 'PCIe版本',
+        // 模組化
+        '模組化': '模組化設計', '全模組': '模組化設計', 'modular': '模組化設計',
+        // 尺寸
+        '尺寸': '產品尺寸', 'dimensions': '產品尺寸', 'size': '產品尺寸', '長寬高': '產品尺寸',
+        // 保固
+        '保修': '保固', '保固期': '保固', 'warranty': '保固', '保養': '保固',
+        // 風扇 / 散熱
+        '風扇': '風扇類型', '散熱風扇': '風扇類型', 'fan': '風扇類型',
+        '散熱': '散熱方式', '冷卻方式': '散熱方式',
+        // 電容 / 連接器
+        '電容': '電容類型', '連接器': '主要連接器', '接頭': '主要連接器', '線材接頭': '主要連接器',
+        // 通用
+        '評價': '累計評價數', '評價數': '累計評價數', '評論數': '累計評價數',
+        '平台': '銷售平台', '通路': '銷售平台', '商店': '銷售平台',
+        '狀態': '產品狀況', '狀況': '產品狀況', '商品狀況': '產品狀況',
+        '色系': '顏色',
+    };
+
+    const STRIP_PREFIX = ['產品', '主要', '支援', '是否', '額定', '商品', '整體'];
+    const STRIP_SUFFIX = ['版本', '標準', '規格', '類型', '型式', '設計', '模式', '功能',
+                          '認證', '方式', '等級', '參數', '資訊', '大小', '標示'];
+
+    function cleanKey(s) {
+        return String(s || '')
+            .toLowerCase()
+            .replace(/[（(].*?[)）]/g, '')          // 去掉括號補充說明
+            .replace(/[\s_\-/·.,:：、+]/g, '')      // 去掉空白與標點
+            .trim();
+    }
+
+    function stripKey(k) {
+        let s = k, changed = true;
+        while (changed) {
+            changed = false;
+            for (const p of STRIP_PREFIX)
+                if (s.startsWith(p) && s.length > p.length) { s = s.slice(p.length); changed = true; }
+            for (const x of STRIP_SUFFIX)
+                if (s.endsWith(x) && s.length > x.length) { s = s.slice(0, -x.length); changed = true; }
+        }
+        return s;
+    }
+
+    function bigrams(s) {
+        const set = new Set();
+        if (s.length === 1) set.add(s);
+        for (let i = 0; i < s.length - 1; i++) set.add(s.slice(i, i + 2));
+        return set;
+    }
+
+    function similarity(a, b) {
+        if (!a || !b) return 0;
+        if (a === b) return 1;
+        if (a.includes(b) || b.includes(a)) {
+            const ratio = Math.min(a.length, b.length) / Math.max(a.length, b.length);
+            if (ratio >= 0.5) return 0.9;
+        }
+        const A = bigrams(a), B = bigrams(b);
+        let inter = 0;
+        A.forEach(x => { if (B.has(x)) inter++; });
+        return (2 * inter) / (A.size + B.size || 1);
+    }
+
+    const MERGE_THRESHOLD = 0.72;
+
+    function resolveKey(rawKey, pool) {
+        const raw = cleanKey(rawKey);
+        if (SYNONYMS[raw]) return SYNONYMS[raw];
+        const stripped = stripKey(raw);
+        if (SYNONYMS[stripped]) return SYNONYMS[stripped];
+
+        let best = null, bestScore = 0;
+        for (const cand of pool) {
+            const score = Math.max(
+                similarity(stripped, stripKey(cleanKey(cand))),
+                similarity(raw, cleanKey(cand))
+            );
+            if (score > bestScore) { bestScore = score; best = cand; }
+        }
+        return bestScore >= MERGE_THRESHOLD ? best : rawKey.trim();
+    }
+
+    function normalizeProductKeys(data) {
+        const pool = [];
+        products.forEach(p => Object.keys(p).forEach(k => {
+            if (k !== '連結' && k !== '來源' && !pool.includes(k)) pool.push(k);
+        }));
+        CORE_FIELDS.forEach(k => { if (!pool.includes(k)) pool.push(k); });
+
+        const out = {};
+        for (const rawKey of Object.keys(data)) {
+            const val = data[rawKey];
+            if (rawKey === '連結' || rawKey === '來源') { out[rawKey] = val; continue; }
+            if (val === null || val === undefined || String(val).trim() === '') continue;
+
+            const key = resolveKey(rawKey, pool);
+            if (!pool.includes(key)) pool.push(key);
+
+            if (out[key] !== undefined) {
+                if (String(val).length > String(out[key]).length) out[key] = val;
+            } else {
+                out[key] = val;
+            }
+        }
+        return out;
+    }
+    
+    // ══════════════════════════════════════════════════════
+    // 資料清洗：修正 AI 常見的抓錯問題
+    // ══════════════════════════════════════════════════════
+    function sanitizeSpecs(data) {
+        // 1. 修正「額定功率」抓錯（例如抓到「主動式 PFC」或沒有數字+W）
+        if (data['額定功率']) {
+            let powerVal = String(data['額定功率']);
+            if ((/PFC/i.test(powerVal) && !/\d+\s*[W瓦]/i.test(powerVal))) {
+                if (!data['PFC類型']) data['PFC類型'] = powerVal;
+                delete data['額定功率'];
+            }
+        }
+
+        // 2. 如果「額定功率」缺失，嘗試從型號、標題或整段文字推測
+        if (!data['額定功率']) {
+            let searchStr = (data['型號'] || '') + ' ' + (data['產品名稱'] || '') + ' ' + (data['標題'] || '');
+            const powerMatch = searchStr.match(/(\d{3,4})\s*[W瓦]/i);
+            if (powerMatch) {
+                data['額定功率'] = powerMatch[1] + 'W';
+            }
+        }
+
+        // 3. 簡化「型號」：如果長度過長，移除括號內的說明以保持乾淨
+        if (data['型號']) {
+            let model = String(data['型號']);
+            // 移除中英文括號及其內容
+            model = model.replace(/\([^)]*\)/g, '').replace(/（[^）]*）/g, '').trim();
+            // 如果還是超過 40 字，截斷並加上 ...
+            if (model.length > 40) {
+                model = model.slice(0, 40) + '...';
+            }
+            data['型號'] = model;
+        }
+
+        return data;
+    }
+    // ══════════════════════════════════════════════════════
+
+    const I18N = {
+        zh: {
+            title: '🤖 AI 競品分析器',
+            lede: '輸入網址並貼上網頁文字 ➜ 提取 ➜ 再貼下一個。<br>自動判斷產品類別，精準抓取專屬規格！',
+            lblUrl: '1. 產品網址（選填，會自動生成來源與連結）',
+            lblText: '2. 網頁內容（必填，請在網頁按 Ctrl+A 全選、Ctrl+C 複製後貼上）',
+            lblSave: '記住 Key（存在本機）',
+            btnKey: '取得免費 Key',
+            btnRun: '🚀 提取並加入比較',
+            btnClear: '🗑️ 清空比較表',
+            resTitle: '📊 競品比較結果',
+            btnExport: '📥 匯出 Excel (CSV)',
+            productCount: '（目前共 {n} 個產品）',
+            thSpec: '規格 / 產品',
+            thSource: '來源',
+            thLink: '連結',
+            linkText: '🔗 前往頁面',
+            apiHint: '💡 支援多個 API Key，使用半形逗號 ( , ) 隔開，額度用完會自動切換。',
+            phUrl: 'https://item.jd.com/... 或 https://www.amazon.com/...',
+            phText: '把剛剛複製的網頁內容貼在這裡...',
+            phApiKey: '請輸入 Gemini API Key（可用半形逗號 , 隔開多組）',
+            alertNoText: '請先貼上網頁內容！',
+            alertNoKey: '請先輸入 Gemini API Key！',
+            alertUrlInText: '⚠️ 你似乎把「網址」貼到內容框了！\n我已經幫你移到上面的網址欄，請重新複製「網頁內容」再貼上。',
+            alertShort: '⚠️ 貼上的內容似乎有點短（少於 300 字），可能抓不到完整規格。\n確定要繼續嗎？',
+            statusWait: 'AI 正在閱讀並提取規格...',
+            statusOk: '✅ 成功加入！你可以繼續貼下一個競品。',
+            statusErr: '❌ 發生錯誤：',
+            alertNoData: '目前沒有資料可以匯出！',
+            alertDel: '確定要刪除「產品 {n}」嗎？',
+            alertClear: '確定要清空所有已加入的競品資料嗎？',
+            footBio: '我是瑪司．隱。產品開發、AI 融合與開源LLM研究',
+            footFb1: '發現問題，或有可以提供的實測數據？到',
+            footFb2: '告訴我。',
+            footMeta: '⚠️ 注意：API Key 僅儲存在您的瀏覽器本機，不會上傳。貼上的網頁內容會傳送至 Google Gemini 進行分析，請勿貼上機密資料。'
+        },
+        en: {
+            title: '🤖 AI Competitor Analyzer',
+            lede: 'Input URL and paste text ➜ Extract ➜ Repeat.<br>Auto-detects product category for precise specs!',
+            lblUrl: '1. Product URL (optional, auto-generates source & link)',
+            lblText: '2. Page Content (required, Ctrl+A select all, Ctrl+C copy)',
+            lblSave: 'Remember Key (local only)',
+            btnKey: 'Get Free Key',
+            btnRun: '🚀 Extract & Add',
+            btnClear: '🗑️ Clear Table',
+            resTitle: '📊 Comparison Result',
+            btnExport: '📥 Export CSV',
+            productCount: '({n} products)',
+            thSpec: 'Spec / Product',
+            thSource: 'Source',
+            thLink: 'Link',
+            linkText: '🔗 Visit Page',
+            apiHint: '💡 Supports multiple API Keys, separated by commas ( , ). Automatically switches when quota is exhausted.',
+            phUrl: 'https://item.jd.com/... or https://www.amazon.com/...',
+            phText: 'Paste the copied page content here...',
+            phApiKey: 'Enter Gemini API Key (separate multiple with commas)',
+            alertNoText: 'Please paste the page content first!',
+            alertNoKey: 'Please enter Gemini API Key!',
+            alertUrlInText: '⚠️ Looks like you pasted a URL into the content box!\nI moved it to the URL field above. Please copy the "page content" again.',
+            alertShort: '⚠️ The content seems short (< 300 chars), might not get full specs.\nContinue?',
+            statusWait: 'AI is reading and extracting...',
+            statusOk: '✅ Added successfully! You can paste the next one.',
+            statusErr: '❌ Error: ',
+            alertNoData: 'No data to export!',
+            alertDel: 'Delete "Product {n}"?',
+            alertClear: 'Clear all product data?',
+            footBio: "I'm Mars Yin. Product development, AI integration, and open-source LLM research.",
+            footFb1: 'Found a problem, or have measured data to share? Tell me at',
+            footFb2: '.',
+            footMeta: '⚠️ Note: API Key is stored locally in your browser, not uploaded. Pasted content is sent to Google Gemini for analysis. Do not paste confidential data.'
+        }
+    };
+
+    function t(key, params) {
+        let s = I18N[lang][key];
+        if (params) for (const k in params) s = s.replace(`{${k}}`, params[k]);
+        return s;
+    }
+
+    function applyLanguage() {
+        document.documentElement.lang = lang === 'en' ? 'en' : 'zh-Hant';
+        document.getElementById('t-title').innerHTML = t('title');
+        document.getElementById('t-lede').innerHTML = t('lede');
+        document.getElementById('t-lbl-url').innerText = t('lblUrl');
+        document.getElementById('t-lbl-text').innerText = t('lblText');
+        document.getElementById('t-lbl-save').innerText = t('lblSave');
+        document.getElementById('t-btn-key').innerText = t('btnKey');
+        document.getElementById('t-btn-run').innerText = t('btnRun');
+        document.getElementById('t-btn-clear').innerText = t('btnClear');
+        document.getElementById('t-res-title').innerText = t('resTitle');
+        document.getElementById('t-btn-export').innerText = t('btnExport');
+        document.getElementById('t-api-hint').innerText = t('apiHint');
+        
+        // 動態替換 placeholder
+        document.getElementById('sourceUrl').placeholder = t('phUrl');
+        document.getElementById('sourceText').placeholder = t('phText');
+        document.getElementById('apiKey').placeholder = t('phApiKey');
+
+        document.getElementById('t-foot-bio').innerText = t('footBio');
+        document.getElementById('t-foot-fb1').innerText = t('footFb1');
+        document.getElementById('t-foot-fb2').innerText = t('footFb2');
+        document.getElementById('t-foot-meta').innerText = t('footMeta');
+        
+        document.getElementById('langBtn').innerText = lang === 'zh' ? 'English' : '繁體中文';
+        
+        if (products.length > 0) renderTable();
+    }
+
+    function getSourceName(url) {
+        if (!url) return lang === 'zh' ? '手動輸入' : 'Manual';
+        try {
+            const host = new URL(url).hostname;
+            if (host.includes('jd.com')) return lang === 'zh' ? '京東' : 'JD';
+            if (host.includes('amazon')) return 'Amazon';
+            if (host.includes('momoshop')) return 'momo';
+            if (host.includes('pchome')) return 'PChome';
+            if (host.includes('taobao')) return lang === 'zh' ? '淘寶' : 'Taobao';
+            if (host.includes('tmall')) return lang === 'zh' ? '天貓' : 'Tmall';
+            if (host.includes('shopee')) return lang === 'zh' ? '蝦皮' : 'Shopee';
+            return host.replace('www.', ''); 
+        } catch (e) {
+            return lang === 'zh' ? '手動輸入' : 'Manual';
+        }
+    }
+
+    function setStatus(msg, isLoading = false) {
+        const el = document.getElementById('status');
+        if (!msg) { el.style.display = 'none'; return; }
+        el.style.display = 'block';
+        el.innerHTML = (isLoading ? '<span class="loader"></span>' : '') + msg;
+    }
+
+    async function extractAndAdd() {
+        let url = document.getElementById('sourceUrl').value.trim();
+        let text = document.getElementById('sourceText').value.trim();
+        let apiKeyStr = document.getElementById('apiKey').value.trim();
+        const saveKey = document.getElementById('saveKey').checked;
+        const runBtn = document.getElementById('runBtn');
+
+        if (!text) return alert(t('alertNoText'));
+        if (!apiKeyStr) return alert(t('alertNoKey'));
+
+        // 處理多個 Key
+        const apiKeys = apiKeyStr.split(',').map(k => k.trim()).filter(k => k);
+        
+        if (saveKey) {
+            localStorage.setItem('gemini_api_key', apiKeyStr);
+        } else {
+            localStorage.removeItem('gemini_api_key');
+        }
+
+        if (text.length < 200 && /^https?:\/\/\S+$/i.test(text)) {
+            document.getElementById('sourceUrl').value = text;
+            document.getElementById('sourceText').value = '';
+            return alert(t('alertUrlInText'));
+        }
+
+        if (text.length < 300) {
+            if (!confirm(t('alertShort'))) return;
+        }
+
+        runBtn.disabled = true;
+        setStatus(t('statusWait'), true);
+
+        const excerpt = text.slice(0, 15000); 
+
+        // 收集目前已存在的欄位，丟回給 AI 參考，避免同義欄位分裂
+        const existingFields = [];
+        products.forEach(p => Object.keys(p).forEach(k => {
+            if (k !== '連結' && k !== '來源' && !existingFields.includes(k)) existingFields.push(k);
+        }));
+
+        const reuseRule = existingFields.length ? `
+【🔥 最高優先規則：欄位名稱必須沿用既有欄位】
+目前已存在的欄位名稱如下：
+${existingFields.join('、')}
+
+- 若你的新欄位語意與上面任何一個相同或相近，**必須一字不差地使用上面既有的名稱**。
+- 例如上面已有「額定功率」，就不要寫「額定瓦數」「輸出瓦數」。
+- 例如上面已有「ATX版本」，就不要寫「ATX標準」「ATX規格」。
+- 例如上面已有「產品尺寸」，就不要寫「尺寸」「產品尺寸(長x寬x高)」。
+- 只有語意真的不同時，才新增欄位。
+` : '';
+
+        const prompt = `
+你是一個專業的競品分析師。請從以下「網頁文字」中，提取該產品的核心規格。
+${reuseRule}
+【輸出要求】
+1. 輸出格式必須是一個 **純 JSON 物件**。
+2. 你必須保留以下「基礎欄位」（如果有在文章內的話）：【${CORE_FIELDS.join(', ')}】
+3. 針對該產品的「專屬特性」，請你自己判斷並新增 5~10 個最關鍵的規格欄位。
+   - 例如：如果是「散熱器」，請新增「支援腳位、風扇轉速、噪音值、解熱能力(TDP)」。
+   - 例如：如果是「手機」，請新增「螢幕尺寸、儲存容量、記憶體、處理器型號、電池容量」。
+   - 例如：如果是「吹風機」，請新增「瓦數、風溫段數、風量、負離子功能」。
+   - 例如：如果是「電鍋」，請新增「容量、內鍋材質、加熱方式、保溫功能」。
+4. 所有的欄位名稱請使用**繁體中文**，並盡量標準化，讓不同品牌（如京東與 Amazon）的相同概念能對齊。
+5. 如果某個欄位在文字中找不到，請直接忽略該屬性。
+6. 不要包含 markdown 標記（如 \`\`\`json ），只要給我最乾淨的 JSON。
+
+【⚠️ 防錯提醒】
+- 提取「額定功率」時，值必須包含數字與 W 或 瓦（例如 1200W），絕對不要把「主動式 PFC」、「全模組」等技術名稱誤認為功率。如果找不到功率數字，請直接忽略此欄位。
+- 提取「型號」時請保持簡短，如果原文包含過多補充說明（如括號內容），請只保留核心型號名稱。
+
+【網頁文字開始】
+${excerpt}
+【網頁文字結束】
+`;
+
+        // 支援多個 Key 的請求邏輯
+        async function tryFetchWithKeys() {
+            for (let i = 0; i < apiKeys.length; i++) {
+                const key = apiKeys[i];
+                try {
+                    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            contents: [{ parts: [{ text: prompt }] }],
+                            generationConfig: { temperature: 0.1, responseMimeType: "application/json" }
+                        })
+                    });
+
+                    if (res.ok) {
+                        return await res.json();
+                    } else if (res.status === 429 || res.status === 403) {
+                        // 額度用完或 Key 無效，嘗試下一個
+                        console.warn(`Key ${i+1} failed, trying next...`);
+                        continue;
+                    } else {
+                        throw new Error('API ' + res.status);
+                    }
+                } catch (e) {
+                    if (i === apiKeys.length - 1) throw e; // 最後一個也失敗了
+                }
+            }
+            throw new Error('All API Keys failed');
+        }
+
+        try {
+            const data = await tryFetchWithKeys();
+            let aiText = data.candidates[0].content.parts[0].text;
+            
+            aiText = aiText.replace(/```json/g, '').replace(/```/g, '').trim();
+            
+            const parsed = JSON.parse(aiText);
+
+            if (Object.keys(parsed).length === 0) {
+                throw new Error('No specs found');
+            }
+
+            // 1. 欄位名稱先對齊
+            let productData = normalizeProductKeys(parsed);
+            
+            // 2. 資料清洗：防呆修正 (如 PFC 被誤認為功率、型號過長)
+            productData = sanitizeSpecs(productData);
+
+            if (url) {
+                productData['連結'] = url;
+                productData['來源'] = getSourceName(url);
+            }
+
+            products.push(productData);
+            document.getElementById('sourceUrl').value = '';
+            document.getElementById('sourceText').value = '';
+            
+            renderTable();
+            setStatus(t('statusOk'));
+            
+            document.getElementById('resultCard').style.display = 'block';
+            document.getElementById('resultCard').scrollIntoView({ behavior: 'smooth' });
+
+        } catch (e) {
+            setStatus(t('statusErr') + e.message);
+        } finally {
+            runBtn.disabled = false;
+        }
+    }
+
+    function removeProduct(index) {
+        if (!confirm(t('alertDel', {n: index + 1}))) return;
+        products.splice(index, 1);
+        renderTable();
+        if (products.length === 0) {
+            document.getElementById('resultCard').style.display = 'none';
+        }
+    }
+
+    function renderTable() {
+        const table = document.getElementById('compareTable');
+        const thead = table.querySelector('thead');
+        const tbody = table.querySelector('tbody');
+        
+        document.getElementById('productCount').innerText = t('productCount', {n: products.length});
+
+        if (products.length === 0) {
+            document.getElementById('resultCard').style.display = 'none';
+            return;
+        }
+
+        const allKeys = new Set();
+        products.forEach(p => {
+            Object.keys(p).forEach(k => {
+                if (k !== '連結' && k !== '來源') allKeys.add(k);
+            });
+        });
+        
+        const sortedKeys = Array.from(allKeys).sort((a, b) => {
+            const idxA = CORE_FIELDS.indexOf(a);
+            const idxB = CORE_FIELDS.indexOf(b);
+            if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+            if (idxA !== -1) return -1;
+            if (idxB !== -1) return 1;
+            return 0;
+        });
+
+        thead.innerHTML = `<tr><th>${t('thSpec')}</th>${products.map((p, i) => `
+            <th>
+                ${lang === 'zh' ? '產品' : 'Product'} ${i + 1}<br><span style="font-weight:normal;font-size:12px;color:var(--sub)">${p['型號'] || p['品牌'] || ''}</span>
+                <button class="btn-del" onclick="removeProduct(${i})" title="Remove">×</button>
+            </th>
+        `).join('')}</tr>`;
+
+        let html = '';
+
+        html += sortedKeys.map(key => {
+            const row = `<tr>
+                <th>${key}</th>
+                ${products.map(p => `<td>${p[key] || ''}</td>`).join('')}
+            </tr>`;
+            return row;
+        }).join('');
+
+        html += `<tr><th>${t('thSource')}</th>${products.map(p => `<td><span style="background:var(--grid); padding:2px 8px; border-radius:4px; font-size:12px; font-weight:bold;">${p['來源'] || ''}</span></td>`).join('')}</tr>`;
+        
+        html += `<tr><th>${t('thLink')}</th>${products.map(p => `<td>${p['連結'] ? `<a href="${p['連結']}" target="_blank">${t('linkText')}</a>` : ''}</td>`).join('')}</tr>`;
+
+        tbody.innerHTML = html;
+    }
+
+    function clearAll() {
+        if (!confirm(t('alertClear'))) return;
+        products = [];
+        renderTable();
+        setStatus('');
+    }
+
+    function exportExcel() {
+        if (products.length === 0) return alert(t('alertNoData'));
+        
+        const allKeys = new Set();
+        products.forEach(p => {
+            Object.keys(p).forEach(k => {
+                if (k !== '連結' && k !== '來源') allKeys.add(k);
+            });
+        });
+        
+        const sortedKeys = Array.from(allKeys).sort((a, b) => {
+            const idxA = CORE_FIELDS.indexOf(a);
+            const idxB = CORE_FIELDS.indexOf(b);
+            if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+            if (idxA !== -1) return -1;
+            if (idxB !== -1) return 1;
+            return 0;
+        });
+        
+        let csvContent = "\uFEFF"; 
+        
+        const headers = [t('thSpec'), ...products.map((p, i) => `${lang === 'zh' ? '產品' : 'Product'} ${i + 1} (${p['型號'] || p['品牌'] || ''})`)];
+        csvContent += headers.map(h => `"${h}"`).join(',') + "\n";
+        
+        sortedKeys.forEach(key => {
+            const row = [key, ...products.map(p => p[key] || '')];
+            csvContent += row.map(v => `"${String(v).replace(/"/g, '""').replace(/\n/g, ' ')}"`).join(',') + "\n";
+        });
+
+        const sourceRow = [t('thSource'), ...products.map(p => p['來源'] || '')];
+        csvContent += sourceRow.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',') + "\n";
+
+        const linkRow = [t('thLink'), ...products.map(p => p['連結'] || '')];
+        csvContent += linkRow.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',') + "\n";
+
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.setAttribute("href", url);
+        link.setAttribute("download", lang === 'zh' ? "競品比較表.csv" : "competitor_comparison.csv");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const savedKey = localStorage.getItem('gemini_api_key');
+        if (savedKey) {
+            document.getElementById('apiKey').value = savedKey;
+            document.getElementById('saveKey').checked = true;
+        }
+
+        document.getElementById('langBtn').addEventListener('click', () => {
+            lang = lang === 'zh' ? 'en' : 'zh';
+            applyLanguage();
+        });
+
+        applyLanguage();
+    });
+
+</script>
+</body>
+</html>
